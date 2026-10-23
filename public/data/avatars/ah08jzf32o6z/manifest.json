@@ -1,0 +1,29 @@
+{
+  "id": "ah08jzf32o6z",
+  "name": "Test",
+  "description": "",
+  "tags": [],
+  "createdAt": "2026-10-23T23:01:12.780Z",
+  "updatedAt": "2026-10-23T23:01:12.786Z",
+  "published": false,
+  "model": "",
+  "thumbnail": "",
+  "files": [],
+  "rig": {
+    "physbones": [],
+    "clothes": [],
+    "inactive": [],
+    "expressions": {
+      "menu": [],
+      "parameters": []
+    },
+    "source": ""
+  },
+  "render": {
+    "emission": 1,
+    "bloom": 0.9,
+    "shading": "original",
+    "alphaCutout": false,
+    "accent": "#ff1a3c"
+  }
+}
