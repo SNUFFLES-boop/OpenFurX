@@ -585,6 +585,8 @@ async function handleStatic(req, res, url) {
         throw new HttpError(404, 'Not found');
     }
 
+    if (pathname === '/config.json') return sendJson(res, 200, { static: false }); // the app probes this to pick its backend
+
     if (pathname !== '/' && pathname !== '/index.html') {
         const abs = resolveInside(PUBLIC_DIR, pathname);
         if (abs && await serveFile(req, res, abs)) return;

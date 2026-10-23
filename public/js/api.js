@@ -1,6 +1,22 @@
 // Same-origin API client. Every request carries X-OpenFurX, which the server requires on writes.
 
 export const session = { owner: false, loginEnabled: false };
+let backend = null; // set on static hosting (GitHub Pages), where there is no server to talk to
+
+// The deploy workflow publishes config.json; the Node server does not have one.
+export async function initBackend() {
+    try {
+        const res = await fetch('config.json', { cache: 'no-cache' });
+        const cfg = res.ok ? await res.json() : null;
+        if (cfg?.static) {
+            backend = await import('./static-backend.js');
+            backend.configure(cfg);
+        }
+    } catch { /* no config: talk to the server */ }
+}
+
+export const isStatic = () => backend !== null;
+export const staticRepo = () => backend?.repoName?.() || '';
 const listeners = new Set();
 
 export function onSessionChange(fn) {
@@ -9,6 +25,14 @@ export function onSessionChange(fn) {
 }
 
 export async function api(path, { method = 'GET', body } = {}) {
+    if (backend) {
+        try {
+            return await backend.request(path, { method, body });
+        } catch (err) {
+            if (/log in again/i.test(err.message)) setSession({ ...session, owner: false });
+            throw err;
+        }
+    }
     const headers = { 'X-OpenFurX': '1' };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     const res = await fetch(path, { method, headers, credentials: 'same-origin', body: body === undefined ? undefined : JSON.stringify(body) });
@@ -25,7 +49,7 @@ function setSession(next) {
 
 export async function refreshSession() {
     try {
-        setSession(await api('/api/session'));
+        setSession(backend ? await backend.session() : await api('/api/session'));
     } catch {
         setSession({ owner: false, loginEnabled: false });
     }
@@ -33,16 +57,18 @@ export async function refreshSession() {
 }
 
 export async function login(username, password) {
-    await api('/api/login', { method: 'POST', body: { username, password } });
+    if (backend) await backend.login(password);
+    else await api('/api/login', { method: 'POST', body: { username, password } });
     return refreshSession();
 }
 
 export async function logout() {
-    await api('/api/logout', { method: 'POST' });
+    if (backend) backend.logout();
+    else await api('/api/logout', { method: 'POST' });
     return refreshSession();
 }
 
-export const fileUrl = (id, name) => `/files/${encodeURIComponent(id)}/${encodeURIComponent(name)}`;
+export const fileUrl = (id, name) => (backend ? backend.fileUrl(id, name) : `/files/${encodeURIComponent(id)}/${encodeURIComponent(name)}`);
 
 // Upload names follow the server rule: plain basename, letters/digits/._-()+ and spaces.
 export function cleanUploadName(name) {
@@ -53,6 +79,7 @@ export const UPLOAD_EXTENSIONS = ['.fbx', '.glb', '.gltf', '.obj', '.vrm', '.bin
     '.prefab', '.unitypackage', '.mat', '.asset', '.controller', '.json', '.txt', '.zip'];
 
 export function uploadFile(id, name, blob, onProgress) {
+    if (backend) return backend.putFiles(id, [{ name, blob }], null, onProgress);
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', `/api/avatars/${encodeURIComponent(id)}/files/${encodeURIComponent(name)}`);
@@ -70,6 +97,7 @@ export function uploadFile(id, name, blob, onProgress) {
 }
 
 export async function uploadBatch(id, files, rows) {
+    if (backend) return backend.putFiles(id, files.map((f) => ({ name: cleanUploadName(f.name), blob: f })), rows);
     for (const [i, file] of files.entries()) {
         rows?.[i]?.setStatus('uploading');
         await uploadFile(id, cleanUploadName(file.name), file, (p) => rows?.[i]?.setProgress(p));

@@ -1,4 +1,4 @@
-import { api, session, refreshSession, onSessionChange, login, logout, fileUrl, uploadBatch, readRigFile, UPLOAD_EXTENSIONS } from './api.js';
+import { api, session, isStatic, staticRepo, initBackend, refreshSession, onSessionChange, login, logout, fileUrl, uploadBatch, readRigFile, UPLOAD_EXTENSIONS } from './api.js';
 import { h, icon, button, toggle, toast, formatBytes, searchFilter } from './ui.js';
 
 const view = document.getElementById('view');
@@ -128,7 +128,7 @@ async function mountOwner(root) {
 
 function renderLogin(container) {
     const user = h('input', { class: 'input', name: 'username', autocomplete: 'username', required: true, value: 'owner' });
-    const pass = h('input', { class: 'input', name: 'password', type: 'password', autocomplete: 'current-password', required: true });
+    const pass = h('input', { class: 'input', name: 'password', type: 'password', autocomplete: isStatic() ? 'off' : 'current-password', required: true });
     const submit = h('button', { type: 'submit', class: 'btn btn--primary', style: { width: '100%' } }, icon('lock'), 'Authenticate');
     const form = h('form', {
         class: 'panel login',
@@ -151,8 +151,9 @@ function renderLogin(container) {
     h('div', { class: 'panel__head' }, icon('lock'), h('span', { class: 'panel__title', text: 'Owner access' })),
     h('div', { class: 'panel__body' },
         h('div', { class: 'terminal' }, '> openfurx.auth --owner', h('br'), '> uplink ', h('b', { text: 'SECURE' }), h('br'), '> awaiting credentials_'),
-        h('label', { class: 'field' }, h('span', { text: 'Username' }), user),
-        h('label', { class: 'field' }, h('span', { text: 'Password' }), pass),
+        !isStatic() && h('label', { class: 'field' }, h('span', { text: 'Username' }), user),
+        h('label', { class: 'field' }, h('span', { text: isStatic() ? 'GitHub token' : 'Password' }), pass),
+        isStatic() && h('p', { class: 'muted small', text: `Create a fine-grained token limited to ${staticRepo()} with Contents: read and write (GitHub › Settings › Developer settings). It stays in this tab only and is cleared when you close it.` }),
         submit));
     container.append(form);
     setTimeout(() => pass.focus(), 50);
@@ -229,8 +230,13 @@ async function renderDashboard(container) {
                     },
                 });
                 await uploadBatch(created.id, rest, rest.map((f) => rowFor.get(f)));
-                toast('Avatar uploaded', 'ok');
-                location.hash = `#/avatar/${created.id}`;
+                if (isStatic()) {
+                    toast('Committed to GitHub. The site redeploys in about a minute.', 'ok');
+                    route();
+                } else {
+                    toast('Avatar uploaded', 'ok');
+                    location.hash = `#/avatar/${created.id}`;
+                }
             } catch (err) {
                 toast(err.message);
             } finally {
@@ -281,7 +287,8 @@ async function renderDashboard(container) {
                 h('div', { class: 'panel__body' }, avatars.length
                     ? h('table', { class: 'table' }, h('thead', {}, h('tr', {}, h('th', { text: 'Avatar' }), h('th', { class: 'hide-sm', text: 'Files' }), h('th', { text: 'State' }), h('th'))), tbody)
                     : h('p', { class: 'muted', text: 'Nothing uploaded yet.' })),
-                h('div', { class: 'panel__body' }, h('div', { class: 'hint' },
+                h('div', { class: 'panel__body' }, isStatic() && h('div', { class: 'hint', style: { marginBottom: '10px' }, text: 'Hosted on GitHub Pages: every change is a commit, and new avatars and files appear for visitors once the deploy workflow finishes. Files over 100 MB are refused; drafts are hidden from the site but remain visible in the repository if it is public.' }),
+                h('div', { class: 'hint' },
                     'Tip: in Unity, select the avatar root and run Tools › OpenFurX › Export Avatar Root. Upload the generated .prefab, the preview FBX/GLB, its textures and openfurx.json together — PhysBones, clothes, inactive objects and the expression menu are read from it.')))));
 }
 
@@ -289,4 +296,4 @@ async function renderDashboard(container) {
 
 onSessionChange(renderSessionBadge);
 window.addEventListener('hashchange', route);
-refreshSession().then(route);
+initBackend().then(refreshSession).then(route);
