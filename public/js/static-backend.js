@@ -4,7 +4,7 @@
 
 const TOKEN_KEY = 'ofx.gh-token';
 const API = 'https://api.github.com';
-const MAX_FILE_BYTES = 50 * 1024 * 1024; // the contents API accepts up to 100 MB, but large bodies fail often
+const MAX_FILE_BYTES = 100 * 1000 * 1000; // GitHub rejects files over 100 MiB; the contents API takes them base64-encoded
 
 const KINDS = {
     '.fbx': 'model', '.glb': 'model', '.gltf': 'model', '.obj': 'model', '.vrm': 'model',
@@ -233,7 +233,7 @@ export async function putFiles(id, files, rows, onProgress) {
     const manifest = await readManifest(id);
     for (const [i, { name, blob }] of files.entries()) {
         if (!KINDS[ext(name)]) throw new Error(`${name}: file type not allowed`);
-        if (blob.size > MAX_FILE_BYTES) throw new Error(`${name} is ${(blob.size / 1048576).toFixed(0)} MB; the GitHub API limit here is ${MAX_FILE_BYTES / 1048576} MB. Decimate the mesh or compress textures.`);
+        if (blob.size > MAX_FILE_BYTES) throw new Error(`${name} is ${(blob.size / 1000000).toFixed(0)} MB; the limit here is ${MAX_FILE_BYTES / 1000000} MB. Decimate the mesh or compress textures.`);
         rows?.[i]?.setStatus('committing');
         await putContent(`${dir(id)}/${name}`, await toBase64(blob), `Upload ${name} to ${manifest.name}`);
         rows?.[i]?.setProgress(1);

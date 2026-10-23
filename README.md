@@ -29,7 +29,7 @@ Set up once:
 
 Limits of static hosting:
 
-- Files over 50 MB are refused, since the GitHub API is the upload path.
+- Files over 100 MB are refused: GitHub blocks larger files, and uploads go through its API. Files near the limit can be slow or fail on a weak connection, so compress textures or decimate the mesh when you can. The whole deployed site must also stay under Pages' 1 GB limit.
 - Drafts are left out of the deployed site, but they are still in the repo and readable if it is public.
 - Anyone with the token has full write access to the repo, so keep it short-lived and scoped.
 - There are no custom security headers (CSP and so on), because Pages cannot set them.

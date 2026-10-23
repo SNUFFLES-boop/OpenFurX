@@ -287,7 +287,7 @@ async function renderDashboard(container) {
                 h('div', { class: 'panel__body' }, avatars.length
                     ? h('table', { class: 'table' }, h('thead', {}, h('tr', {}, h('th', { text: 'Avatar' }), h('th', { class: 'hide-sm', text: 'Files' }), h('th', { text: 'State' }), h('th'))), tbody)
                     : h('p', { class: 'muted', text: 'Nothing uploaded yet.' })),
-                h('div', { class: 'panel__body' }, isStatic() && h('div', { class: 'hint', style: { marginBottom: '10px' }, text: 'Hosted on GitHub Pages: every change is a commit, and new avatars and files appear for visitors once the deploy workflow finishes. Files over 50 MB are refused; drafts are hidden from the site but remain visible in the repository if it is public.' }),
+                h('div', { class: 'panel__body' }, isStatic() && h('div', { class: 'hint', style: { marginBottom: '10px' }, text: 'Hosted on GitHub Pages: every change is a commit, and new avatars and files appear for visitors once the deploy workflow finishes. Files over 100 MB are refused; drafts are hidden from the site but remain visible in the repository if it is public.' }),
                 h('div', { class: 'hint' },
                     'Tip: in Unity, select the avatar root and run Tools › OpenFurX › Export Avatar Root. Upload the generated .prefab, the preview FBX/GLB, its textures and openfurx.json together — PhysBones, clothes, inactive objects and the expression menu are read from it.')))));
 }
