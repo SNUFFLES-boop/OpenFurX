@@ -13,6 +13,29 @@ An avatar showcase site you host yourself. Visitors browse a gallery and inspect
   - **Render:** bloom strength, radius and threshold, exposure, emission intensity and pulse, shading (original, toon, unlit, clay, emission wireframe), alpha cutout for fur cards, the floor and scanner, and the accent colour.
 - **Owner console:** login, multi-file drag-and-drop upload with progress, publish/draft, editing, deletion, adding files, and taking the card thumbnail from the current view. The owner can also set PhysBone chain roots, mark objects as clothes or inactive, write a custom expression menu, and save the default render look.
 
+## Host it on GitHub Pages (no server)
+
+Pages only serves static files, so in this mode the site has no server and there is no owner password. It works like this instead:
+
+- **Visitors** get the same gallery and 3D viewer, read from files in the repo.
+- **The owner** logs in on `#/owner` with a fine-grained GitHub token. Uploads and edits are commits to the repo through the GitHub API, and the workflow redeploys the site about a minute later.
+
+Set up once:
+
+1. Make the repository **public**. Pages on a private repo needs a paid GitHub plan.
+2. **Settings › Pages › Build and deployment › Source: GitHub Actions**.
+3. Merge to `main`. `.github/workflows/pages.yml` builds `_site/` (`scripts/build-pages.mjs`) and deploys it to `https://<user>.github.io/<repo>/`.
+4. Create a token at GitHub › Settings › Developer settings › Fine-grained tokens. Limit it to this repository with **Contents: Read and write**, then paste it on the Owner page. It lives in that browser tab only.
+
+Limits of static hosting:
+
+- Files over 50 MB are refused, since the GitHub API is the upload path.
+- Drafts are left out of the deployed site, but they are still in the repo and readable if it is public.
+- Anyone with the token has full write access to the repo, so keep it short-lived and scoped.
+- There are no custom security headers (CSP and so on), because Pages cannot set them.
+
+To keep avatars out of the code repo, move them (or the whole site) to a separate public repo, or run the Node server below.
+
 ## Run it
 
 ```sh
